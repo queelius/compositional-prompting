@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "compositional-prompting"
+version = "0.2.0"
+description = "A fluid API framework for building sophisticated LLM prompts through compositional actions"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Alex Towell", email = "atowell@siue.edu"},
+    {name = "Hiroshi Fujinoki", email = "hfujinoki@siue.edu"},
+    {name = "Eren Gultepe", email = "egultepe@siue.edu"},
+]
+keywords = ["llm", "prompting", "compositional", "ai", "nlp", "reasoning"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.0.0"]
+anthropic = ["anthropic>=0.7.0"]
+all = ["openai>=1.0.0", "anthropic>=0.7.0"]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0", 
+    "black>=22.0.0",
+    "flake8>=5.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/queelius/compositional-prompting"
+Repository = "https://github.com/queelius/compositional-prompting"
+Issues = "https://github.com/queelius/compositional-prompting/issues"
+
+[project.scripts]
+compositional-demo = "compositional_prompting.examples.demo:main"
+
+[tool.setuptools]
+packages = ["compositional_prompting", "compositional_prompting.examples"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
