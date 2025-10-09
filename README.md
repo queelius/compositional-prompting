@@ -3,16 +3,18 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A fluid API framework for building sophisticated LLM prompts through compositional actions. This library provides a systematic approach to prompt engineering using discrete cognitive operations that can be combined, weighted, and orchestrated across multiple LLM providers.
+A standalone library that provides a structured compositional action space for LLM prompting. This framework enables external systems (MCTS, RL agents, evolutionary algorithms, etc.) to systematically explore and construct prompts through discrete, composable cognitive operations.
+
+**Important**: This is NOT an MCTS or RL implementation. It's a compositional framework that such systems can use as their action space.
 
 ## Key Features
 
-🧩 **Compositional Actions**: Factor prompts into discrete cognitive operations (ω,φ,σ,κ,τ)  
-🎯 **Weighted Sampling**: Bias exploration with learned or manual priors  
-🔌 **Multi-Provider**: OpenAI, Anthropic, and extensible provider architecture  
-⚡ **Parallel Orchestration**: Execute embarrassingly parallel operations concurrently  
-🧠 **Smart Termination**: Intelligent detection of complete reasoning states  
-🎛️ **Fluid API**: Chainable method calls for intuitive prompt construction  
+🧩 **Compositional Action Space**: Factor prompts into orthogonal dimensions (ω,φ,σ,κ,τ)
+🎲 **Structured Sampling**: Sample actions uniformly or with learned/manual weights
+📊 **Action Vectors**: Convert prompts to vectors for ML model integration
+🔗 **Compositional Algebra**: Combine prompts using compose, chain, and fork operations
+🎯 **External System Ready**: Designed for MCTS, RL agents, and other controllers
+🔌 **Multi-Provider Support**: Works with OpenAI, Anthropic, or any LLM  
 
 ## Installation
 
@@ -152,15 +154,15 @@ class CustomProvider(LLMProvider):
 prompt = ComposingPrompt().set_llm_provider(CustomProvider())
 ```
 
-## Applications
+## How External Systems Use This Library
 
-This framework is designed for:
+This library provides the action space that external systems can explore:
 
-- **🎯 MCTS Reasoning Systems**: Systematic exploration of reasoning paths
-- **🤖 Multi-Agent AI**: Coordinated reasoning across multiple agents  
-- **📚 Educational Tools**: Structured problem-solving guidance
-- **🔬 Research**: Interpretable and controllable prompt engineering
-- **🏢 Enterprise AI**: Reliable, explainable reasoning systems
+- **🎯 MCTS**: Each node's action is a `ComposingPrompt`, sampled with learned weights
+- **🤖 RL Agents**: Actions are compositional prompts, Q-values learned over action vectors
+- **🧬 Evolutionary Algorithms**: Genomes are compositional actions that can mutate/crossover
+- **🔬 Research**: Systematic exploration of prompt space with interpretable dimensions
+- **👤 Human-in-the-Loop**: Interactive selection of compositional dimensions
 
 ## Examples
 

@@ -143,6 +143,8 @@ class FocusAspect(Enum):
     EFFICIENCY = "efficiency"
     EXAMPLES = "examples"
     RELATIONSHIPS = "relationships"
+    ALTERNATIVE_APPROACHES = "alternative_approaches"
+    EDGE_CASES = "edge_cases"
 
 
 class ReasoningStyle(Enum):
@@ -176,6 +178,36 @@ class OutputFormat(Enum):
     TABLE = "table"
 
 
+# Extended Compositional Dimensions for richer expressiveness
+class MetaStrategy(Enum):
+    """Meta-level strategies for reasoning orchestration"""
+    FORWARD_CHAINING = "forward_chaining"
+    BACKWARD_CHAINING = "backward_chaining"
+    MEANS_ENDS_ANALYSIS = "means_ends_analysis"
+    CASE_BASED_REASONING = "case_based_reasoning"
+    ANALOGICAL_REASONING = "analogical_reasoning"
+    CONSTRAINT_SATISFACTION = "constraint_satisfaction"
+
+
+class ConfidenceLevel(Enum):
+    """Confidence level in the reasoning"""
+    VERY_LOW = "very_low"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    VERY_HIGH = "very_high"
+    CERTAIN = "certain"
+
+
+class ReasoningDepth(Enum):
+    """Depth of reasoning required"""
+    SURFACE = "surface"
+    SHALLOW = "shallow"
+    MODERATE = "moderate"
+    DEEP = "deep"
+    PROFOUND = "profound"
+
+
 @dataclass
 class ComposingPrompt:
     """
@@ -202,6 +234,11 @@ class ComposingPrompt:
     _style: Optional[ReasoningStyle] = None
     _connection: Optional[ConnectionType] = None
     _output_format: Optional[OutputFormat] = None
+
+    # Extended compositional dimensions
+    _meta_strategy: Optional[MetaStrategy] = None
+    _confidence: Optional[ConfidenceLevel] = None
+    _depth: Optional[ReasoningDepth] = None
     
     # LLM enhancement chain
     _llm_augmentations: List[Dict[str, Any]] = field(default_factory=list)
@@ -222,7 +259,8 @@ class ComposingPrompt:
     # Provider configuration methods
     def set_llm_provider(self, provider: LLMProvider) -> 'ComposingPrompt':
         """Set the LLM provider for meta-reasoning operations"""
-        self._llm_provider = provider
+        if provider is not None:
+            self._llm_provider = provider
         return self
     
     # Core compositional action methods
@@ -260,7 +298,29 @@ class ComposingPrompt:
             output_format = OutputFormat(output_format)
         self._output_format = output_format
         return self
-    
+
+    # Extended dimension methods
+    def meta_strategy(self, strategy: Union[MetaStrategy, str]) -> 'ComposingPrompt':
+        """Set the meta-level reasoning strategy"""
+        if isinstance(strategy, str):
+            strategy = MetaStrategy(strategy)
+        self._meta_strategy = strategy
+        return self
+
+    def confidence(self, level: Union[ConfidenceLevel, str]) -> 'ComposingPrompt':
+        """Set the confidence level"""
+        if isinstance(level, str):
+            level = ConfidenceLevel(level)
+        self._confidence = level
+        return self
+
+    def depth(self, depth_level: Union[ReasoningDepth, str]) -> 'ComposingPrompt':
+        """Set the reasoning depth"""
+        if isinstance(depth_level, str):
+            depth_level = ReasoningDepth(depth_level)
+        self._depth = depth_level
+        return self
+
     def problem_context(self, context: str) -> 'ComposingPrompt':
         """Set the problem context"""
         self._problem_context = context
@@ -344,10 +404,11 @@ Response:"""
             llm = provider or self._llm_provider
             if llm:
                 response = llm.generate(termination_prompt, max_tokens=10, temperature=0.1)
-                return "TERMINAL" in response.upper()
+                if "TERMINAL" in response.upper():
+                    return True
         except Exception:
             pass
-        
+
         return len(state) > 2000  # Fallback to length check
     
     def rag_add_examples(self, n: int = 5, similarity_threshold: float = 0.8) -> 'ComposingPrompt':
@@ -361,6 +422,110 @@ Response:"""
         """Add additional context"""
         self._context_additions.append(context)
         return self
+
+    # Advanced composition methods
+    def compose_with(self, other: 'ComposingPrompt', merge_strategy: str = 'overlay') -> 'ComposingPrompt':
+        """
+        Compose this prompt with another using different strategies.
+
+        Strategies:
+        - 'overlay': Other prompt's non-None values override this prompt's values
+        - 'underlay': This prompt's non-None values are kept, other fills gaps
+        - 'merge': Combine both, creating lists where there are conflicts
+        """
+        if merge_strategy == 'overlay':
+            # Other overrides this
+            for attr in ['_cognitive_op', '_focus', '_style', '_connection', '_output_format',
+                        '_meta_strategy', '_confidence', '_depth']:
+                other_val = getattr(other, attr)
+                if other_val is not None:
+                    setattr(self, attr, other_val)
+        elif merge_strategy == 'underlay':
+            # This overrides other (fill gaps)
+            for attr in ['_cognitive_op', '_focus', '_style', '_connection', '_output_format',
+                        '_meta_strategy', '_confidence', '_depth']:
+                if getattr(self, attr) is None:
+                    setattr(self, attr, getattr(other, attr))
+        elif merge_strategy == 'merge':
+            # Merge contexts and augmentations
+            self._context_additions.extend(other._context_additions)
+            self._llm_augmentations.extend(other._llm_augmentations)
+            self._examples.extend(other._examples)
+
+        return self
+
+    def chain(self, *prompts: 'ComposingPrompt') -> List['ComposingPrompt']:
+        """
+        Chain multiple prompts together for sequential execution.
+        Each prompt inherits context from the previous one.
+        """
+        chain = [self]
+        accumulated_context = self._problem_context or ""
+
+        for prompt in prompts:
+            # Set connection type if not specified
+            if prompt._connection is None:
+                prompt._connection = ConnectionType.BUILDING_ON
+
+            # Accumulate context
+            if accumulated_context:
+                prompt._problem_context = accumulated_context + "\n[Previous context continues]"
+
+            chain.append(prompt)
+            accumulated_context = prompt._problem_context or accumulated_context
+
+        return chain
+
+    def fork(self, n: int = 2, variations: Optional[List[Dict[str, Any]]] = None) -> List['ComposingPrompt']:
+        """
+        Fork into multiple prompt variations for parallel exploration.
+
+        Args:
+            n: Number of forks to create
+            variations: Optional list of dicts specifying variations for each fork
+        """
+        import copy
+
+        forks = []
+        for i in range(n):
+            fork = copy.deepcopy(self)
+
+            # Apply variations if provided
+            if variations and i < len(variations):
+                var = variations[i]
+                for key, value in var.items():
+                    if hasattr(fork, key):
+                        setattr(fork, key, value)
+
+            forks.append(fork)
+
+        return forks
+
+    def llm_evaluate(self, criteria: str = "quality", provider: Optional[LLMProvider] = None) -> float:
+        """
+        Use LLM to evaluate the quality of the current reasoning state.
+
+        Returns a score between 0 and 1.
+        """
+        eval_prompt = f"""
+Evaluate the following reasoning based on {criteria}.
+Provide a score between 0 and 1, where 1 is excellent.
+
+Reasoning to evaluate:
+{self.build()[:1000]}
+
+Score (0-1):"""
+
+        llm = provider or self._llm_provider
+        if llm:
+            try:
+                response = llm.generate(eval_prompt, max_tokens=10, temperature=0.1)
+                score = float(response.strip())
+                return min(max(score, 0.0), 1.0)
+            except:
+                pass
+
+        return 0.5  # Default score
     
     def sample_weighted(self, weights: Optional[Dict[str, Dict[Any, float]]] = None) -> 'ComposingPrompt':
         """Sample action components using optional weights for biased exploration"""
@@ -376,39 +541,31 @@ Response:"""
             
             return random.choices(options, weights=probs)[0]
         
-        if weights:
-            # Sample each component with weights
-            if 'cognitive_op' in weights:
-                self._cognitive_op = _sample_weighted_component(
-                    list(CognitiveOperation), weights['cognitive_op']
-                )
-            
-            if 'focus' in weights:
-                self._focus = _sample_weighted_component(
-                    list(FocusAspect), weights['focus']
-                )
-            
-            if 'style' in weights:
-                self._style = _sample_weighted_component(
-                    list(ReasoningStyle), weights['style']
-                )
-            
-            if 'connection' in weights:
-                self._connection = _sample_weighted_component(
-                    list(ConnectionType), weights['connection']
-                )
-            
-            if 'output_format' in weights:
-                self._output_format = _sample_weighted_component(
-                    list(OutputFormat), weights['output_format']
-                )
-        else:
-            # Uniform random sampling
-            self._cognitive_op = random.choice(list(CognitiveOperation))
-            self._focus = random.choice(list(FocusAspect))
-            self._style = random.choice(list(ReasoningStyle))
-            self._connection = random.choice(list(ConnectionType))
-            self._output_format = random.choice(list(OutputFormat))
+        # Always set all core components, using weights when available
+        self._cognitive_op = _sample_weighted_component(
+            list(CognitiveOperation),
+            weights.get('cognitive_op', {}) if weights else {}
+        )
+
+        self._focus = _sample_weighted_component(
+            list(FocusAspect),
+            weights.get('focus', {}) if weights else {}
+        )
+
+        self._style = _sample_weighted_component(
+            list(ReasoningStyle),
+            weights.get('style', {}) if weights else {}
+        )
+
+        self._connection = _sample_weighted_component(
+            list(ConnectionType),
+            weights.get('connection', {}) if weights else {}
+        )
+
+        self._output_format = _sample_weighted_component(
+            list(OutputFormat),
+            weights.get('output_format', {}) if weights else {}
+        )
         
         return self
     
@@ -554,13 +711,10 @@ Response:"""
     
     def execute_llm_pipeline(self, max_workers: int = 4) -> 'ComposingPrompt':
         """Execute all LLM operations in the pipeline"""
-        if not self._llm_augmentations:
-            return self
-        
         # Group operations for parallel execution
         parallel_calls = []
         sequential_calls = []
-        
+
         for aug in self._llm_augmentations:
             if aug.get('parallel', True) and aug['type'] == 'examples':
                 # Break examples into individual calls for parallel execution
@@ -573,19 +727,19 @@ Response:"""
                     })
             else:
                 sequential_calls.append(aug)
-        
+
         # Execute parallel calls
         if parallel_calls:
             logger.info(f"Executing {len(parallel_calls)} LLM calls in parallel")
             parallel_results = self._execute_parallel_llm_calls(parallel_calls, max_workers)
             self._examples.extend(parallel_results)
-        
+
         # Execute sequential calls
         for call in sequential_calls:
             result = call['provider'].generate(call['instruction'])
             if call['type'] == 'augment':
                 self._context_additions.append(f"Augmentation: {result}")
-        
+
         # Execute coherence check if requested
         if self._coherence_checks and self._coherence_provider:
             current_prompt = self.build()
@@ -593,7 +747,7 @@ Response:"""
                 f"Review this prompt for coherence and suggest improvements:\n\n{current_prompt}"
             )
             self._context_additions.append(f"Coherence Check: {coherence_result}")
-        
+
         return self
     
     def get_action_vector(self) -> Dict[str, Any]:
